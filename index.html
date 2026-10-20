@@ -72,7 +72,10 @@ input[type=time],input[type=text]{font:inherit;font-size:.88rem;padding:2px 8px;
 input[type=time]{direction:ltr}
 .tag{font-size:.8rem;background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:0 10px}
 .warn{color:var(--warn);font-size:.8rem}
-.link{border:0;background:none;color:var(--muted);cursor:pointer;font:inherit;font-size:.85rem;padding:0 4px}
+.link{border:0;background:none;color:#c62828;cursor:pointer;font:inherit;font-size:.85rem;padding:0 4px}
+.link:hover{text-decoration:underline}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .link{color:#ff8a80}}
+:root[data-theme="dark"] .link{color:#ff8a80}
 .add{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px}
 .add .txt{flex:1 1 180px;min-width:0;font-size:1rem;padding:6px 10px}
 .btn{font:inherit;border:0;border-radius:8px;padding:6px 16px;background:var(--accent);color:var(--bg);cursor:pointer;font-weight:600}
