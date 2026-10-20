@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Planner</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;800&display=swap">
+<style>
+:root{
+  --bg:#f3f6f2; --surface:#ffffff; --ink:#1b2a24; --muted:#5d6f66; --line:#d5e0d8;
+  --accent:#2c7a57; --accent-soft:#dcefe4; --done:#8a9a91; --warn:#b4531f;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#101a15; --surface:#18261f; --ink:#e4efe8; --muted:#97aba0; --line:#2a3d33;
+    --accent:#6fcf9f; --accent-soft:#1f3a2c; --done:#6c8076; --warn:#f0a070; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#101a15; --surface:#18261f; --ink:#e4efe8; --muted:#97aba0; --line:#2a3d33;
+  --accent:#6fcf9f; --accent-soft:#1f3a2c; --done:#6c8076; --warn:#f0a070; color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Vazirmatn",Tahoma,"DejaVu Sans",sans-serif;line-height:1.8}
+main{max-width:800px;margin:0 auto;padding:28px 18px 60px}
+h1{font-size:2rem;font-weight:800;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 22px}
+.clock{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 16px;margin-bottom:12px;color:var(--muted)}
+.ct{font-size:1.7rem;font-weight:800;color:var(--ink);direction:ltr;font-variant-numeric:tabular-nums}
+.total{display:flex;align-items:center;gap:14px;margin-bottom:22px}
+.bar{flex:1;height:12px;border-radius:6px;background:var(--accent-soft);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+.pct{font-weight:800;min-width:3.2em;text-align:left}
+.tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px}
+.tab{flex:0 0 auto;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;
+  padding:8px 14px;border-radius:10px;cursor:pointer;text-align:center}
+.tab small{display:block;color:var(--muted);font-size:.78rem}
+.tab[aria-selected="true"]{border-color:var(--accent);background:var(--accent-soft);font-weight:600}
+.bar2{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px}
+.pill{font:inherit;border:1px solid var(--line);background:none;color:var(--muted);padding:3px 14px;border-radius:999px;cursor:pointer}
+.pill[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--bg);font-weight:600}
+.sp{flex:1}
+.wt{display:flex;gap:10px;align-items:center;margin-bottom:14px}
+.dtabs{display:flex;gap:6px;overflow-x:auto;padding:4px 0 8px;margin-bottom:12px;border-bottom:1px solid var(--line)}
+.dtab{flex:1 0 auto;font:inherit;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:6px 12px;border-radius:10px;cursor:pointer;text-align:center;white-space:nowrap}
+.dtab small{display:block;color:var(--muted);font-size:.75rem;line-height:1.4}
+.dtab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--bg);font-weight:600}
+.dtab[aria-selected="true"] small{color:var(--bg)}
+.startrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:-6px 0 12px;color:var(--muted);font-size:.85rem}
+#wrange{color:var(--muted);font-size:.9rem;white-space:nowrap}
+input[type=date]{font:inherit;font-size:.88rem;padding:2px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);direction:ltr}
+.wt input{flex:1;min-width:0;font:inherit;font-size:1.15rem;font-weight:600;padding:4px 10px;border-radius:8px;border:1px solid transparent;background:none;color:var(--ink)}
+.wt input:hover,.wt input:focus{border-color:var(--line);background:var(--surface)}
+.group{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:6px 16px 14px;margin-bottom:14px}
+.dh{display:flex;align-items:baseline;justify-content:space-between}
+.group h3{font-size:1.1rem;margin:10px 0 2px}
+.cnt{color:var(--muted);font-size:.85rem}
+.area{border-top:1px solid var(--line);margin-top:8px;padding-top:4px}
+.ah{display:flex;align-items:center;justify-content:space-between}
+.area h4{font-size:.95rem;margin:4px 0 0;color:var(--accent)}
+.task{padding:4px 0}
+.line{display:flex;align-items:flex-start;gap:10px}
+.line input{width:20px;height:20px;margin-top:6px;accent-color:var(--accent);flex:none;cursor:pointer}
+.line label{flex:1;cursor:pointer}
+.task.on label{color:var(--done);text-decoration:line-through}
+.meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding-right:30px;font-size:.85rem;color:var(--muted)}
+input[type=time],input[type=text]{font:inherit;font-size:.88rem;padding:2px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+input[type=time]{direction:ltr}
+.tag{font-size:.8rem;background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:0 10px}
+.warn{color:var(--warn);font-size:.8rem}
+.link{border:0;background:none;color:var(--muted);cursor:pointer;font:inherit;font-size:.85rem;padding:0 4px}
+.add{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px}
+.add .txt{flex:1 1 180px;min-width:0;font-size:1rem;padding:6px 10px}
+.btn{font:inherit;border:0;border-radius:8px;padding:6px 16px;background:var(--accent);color:var(--bg);cursor:pointer;font-weight:600}
+.btn.ghost{background:none;color:var(--accent);border:1px solid var(--accent)}
+.newarea{border-top:1px dashed var(--line);margin-top:12px;padding-top:8px}
+.empty{color:var(--muted);padding:6px 0}
+.reset{font:inherit;background:none;color:var(--muted);border:1px solid var(--line);border-radius:8px;padding:6px 16px;cursor:pointer;margin-top:6px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+</head>
+<body>
+<main>
+  <div style="display:flex;justify-content:center;margin-bottom:16px"><svg width="72" height="72" viewBox="0 0 64 64" role="img" aria-label="Planner"><rect width="64" height="64" rx="18" fill="var(--accent)"/><rect x="22" y="11" width="5" height="12" rx="2.5" fill="var(--bg)"/><rect x="37" y="11" width="5" height="12" rx="2.5" fill="var(--bg)"/><rect x="13" y="18" width="38" height="34" rx="7" fill="var(--bg)"/><path d="M24 36l6 6 11-13" fill="none" stroke="var(--accent)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  <div class="clock"><span class="ct" id="clkT"></span><span id="clkD"></span></div>
+  <h1 style="font-size:40px;" dir="ltr">Planner</h1>
+  <p class="sub" style="font-size:35px;" dir="ltr">
+The World Is Yours... 
+</p>
+  <div class="total"><div class="bar"><i id="fill"></i></div><span class="pct" id="pct">۰٪</span></div>
+  <div class="tabs" id="tabs" role="tablist"></div>
+  <div class="bar2">
+    <button class="btn ghost" id="addEmpty">هفتهٔ خالی +</button>
+    <button class="btn ghost" id="addCopy">کپی این هفته +</button>
+    <span class="sp"></span>
+    <button class="pill" data-m="area">حوزه‌ها</button>
+    <button class="pill" data-m="time">ساعت‌بندی</button>
+  </div>
+  <div class="wt"><input type="text" id="wtitle" aria-label="عنوان هفته"><span id="wrange"></span><button class="link" id="delWeek">حذف هفته</button></div>
+  <div class="startrow"><label for="startIn">شروع هفتهٔ اول:</label><input type="date" id="startIn"></div>
+  <div class="dtabs" id="dtabs" role="tablist" aria-label="روزهای هفته"></div>
+  <div id="days"></div>
+  <datalist id="areas"></datalist>
+  <button class="reset" id="exp" style="margin-inline-end:8px">خروجی گرفتن</button><button class="reset" id="imp" style="margin-inline-end:8px">بارگذاری از فایل</button><input type="file" id="impFile" accept=".json,application/json" hidden><button class="reset" id="reset">پاک‌کردن همهٔ تیک‌ها</button>
+</main>
+<script>
+var DAYS=["شنبه","یکشنبه","دوشنبه","سه‌شنبه","چهارشنبه","پنجشنبه","جمعه"];
+var TPL=[
+{t:"پایه‌ریزی",g:{
+ "لینوکس مینت":["سیستم را با sudo apt update && sudo apt upgrade به‌روز کن","با Timeshift یک snapshot بگیر","دستورات ls، cd، cp، mv و rm را تمرین کن"],
+ "دانشگاه":["سرفصل و تاریخ امتحان همهٔ درس‌ها را یک‌جا بنویس","ساعت‌های ثابت مطالعه را در تقویم بگذار"],
+ "امنیت و پروژه":["یک پروژهٔ اصلی برای این ماه انتخاب کن","مخزن git و README پروژه را بساز"],
+ "عادت‌ها":["ساعت خواب و بیداری ثابت را شروع کن","۲۰ دقیقه پیاده‌روی کن"]}},
+{t:"ابزارها",g:{
+ "لینوکس مینت":["alias و تنظیمات پوستهٔ bash را شخصی‌سازی کن","با apt، flatpak و dpkg نصب و حذف برنامه را تمرین کن","کلید SSH بساز و به GitHub اضافه کن"],
+ "دانشگاه":["فصل‌های عقب‌مانده را مرور کن","تمرین‌های هفتهٔ جاری را کامل کن"],
+ "امنیت و پروژه":["یک writeup امنیتی بخوان و خلاصه‌اش را بنویس","بخش اول پروژه را کد بزن و commit کن"],
+ "عادت‌ها":["یک روز را بدون شبکه‌های اجتماعی بگذران","ورزش کن"]}},
+{t:"عمق",g:{
+ "لینوکس مینت":["یک اسکریپت bash برای کار تکراری خودت بنویس","با cron یا systemd timer آن را زمان‌بندی کن","از پوشه‌های مهم با rsync پشتیبان بگیر"],
+ "دانشگاه":["نمونه‌سؤال‌های امتحان را حل کن","موضوعات سخت را از استاد یا هم‌کلاسی‌ها بپرس"],
+ "امنیت و پروژه":["بخش اصلی پروژه را تمام کن","برای آن تست یا مستندات بنویس"],
+ "عادت‌ها":["مرور هفتگی: چه چیزی خوب پیش رفت؟","خواب منظم را حفظ کن"]}},
+{t:"جمع‌بندی",g:{
+ "لینوکس مینت":["فهرست برنامه‌های نصب‌شده و تنظیمات مهم را ذخیره کن","یک snapshot نهایی با Timeshift بگیر"],
+ "دانشگاه":["مرور نهایی همهٔ درس‌ها","وسایل و برنامهٔ امتحان‌ها را آماده کن"],
+ "امنیت و پروژه":["پروژه را پاک‌سازی و منتشر کن","یادداشتی دربارهٔ آنچه یاد گرفتی بنویس"],
+ "عادت‌ها":["ارزیابی ماه: چه ماند و چه حذف شود؟","برنامهٔ ماه بعد را بنویس"]}}
+];
+var AT={"لینوکس مینت":["20:00","21:00"],"دانشگاه":["16:00","18:00"],"امنیت و پروژه":["21:00","22:30"],"عادت‌ها":["07:00","07:30"]};
+var KEY="month-plan-v2", cur=0, mode="area", state=null, curDay=(new Date().getDay()+1)%7;
+function uid(){return "t"+Math.random().toString(36).slice(2,10)}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+function emptyDays(){return [0,1,2,3,4,5,6].map(function(){return {areas:[]}})}
+function areaIn(day,name){
+  var a=day.areas.filter(function(x){return x.n===name})[0];
+  if(!a){a={n:name,tasks:[]}; day.areas.push(a);}
+  return a;
+}
+function seed(){
+  return TPL.map(function(w){
+    var days=emptyDays();
+    Object.keys(w.g).forEach(function(name,ai){
+      w.g[name].forEach(function(txt,i){
+        var d=(i*2+ai)%6, tm=AT[name]||["",""];
+        areaIn(days[d],name).tasks.push({id:uid(),x:txt,s:tm[0],e:tm[1],d:false});
+      });
+    });
+    return {t:w.t,days:days};
+  });
+}
+try{var raw=localStorage.getItem(KEY); if(raw) state=JSON.parse(raw);}catch(e){}
+if(!state||!state.weeks||!state.weeks.length){state={weeks:seed()}; save();}
+function pd(s){var p=s.split("-"); return new Date(+p[0],+p[1]-1,+p[2],12);}
+function iso(d){return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2);}
+function addDays(d,n){var r=new Date(d.getTime()); r.setDate(r.getDate()+n); r.setHours(12,0,0,0); return r;}
+function satOf(d){return addDays(d,-((d.getDay()+1)%7));}
+var fDay;
+try{fDay=new Intl.DateTimeFormat("fa-IR-u-ca-persian",{day:"numeric",month:"long"});}catch(e){}
+function fmtDay(d){return fDay?fDay.format(d):iso(d);}
+function weekStart(i){return addDays(pd(state.start),7*i);}
+function realWeek(){var diff=Math.round((satOf(new Date()).getTime()-pd(state.start).getTime())/864e5); return Math.floor(diff/7);}
+function clampW(r){return Math.max(0,Math.min(state.weeks.length-1,r));}
+function nowWeekIdx(){return clampW(realWeek());}
+if(!state.start){state.start=iso(satOf(new Date())); save();}
+cur=nowWeekIdx();
+var fa=function(n){return String(n).replace(/\d/g,function(d){return "۰۱۲۳۴۵۶۷۸۹"[d]})};
+function el(tag,cls,txt){var n=document.createElement(tag); if(cls) n.className=cls; if(txt!==undefined) n.textContent=txt; return n;}
+function each(week,fn){week.days.forEach(function(d,di){d.areas.forEach(function(a){a.tasks.forEach(function(k){fn(k,a,d,di)})})})}
+function stats(week){var t=0,d=0; each(week,function(k){t++; if(k.d) d++}); return {t:t,d:d};}
+function timeIn(val,label,fn){
+  var t=el("input"); t.type="time"; t.value=val||""; t.setAttribute("aria-label",label);
+  if(fn) t.onchange=function(){fn(t.value)};
+  return t;
+}
+function mkTask(k,area,tag,overlap){
+  var row=el("div","task"+(k.d?" on":""));
+  var line=el("div","line");
+  var cb=el("input"); cb.type="checkbox"; cb.id="c"+k.id; cb.checked=!!k.d;
+  cb.onchange=function(){k.d=cb.checked; save(); render();};
+  var lb=el("label",null,k.x); lb.htmlFor=cb.id;
+  line.appendChild(cb); line.appendChild(lb); row.appendChild(line);
+  var m=el("div","meta");
+  if(tag) m.appendChild(el("span","tag",area.n));
+  m.appendChild(el("span",null,"از")); m.appendChild(timeIn(k.s,"ساعت شروع",function(v){k.s=v; save(); render();}));
+  m.appendChild(el("span",null,"تا")); m.appendChild(timeIn(k.e,"ساعت پایان",function(v){k.e=v; save(); render();}));
+  if(overlap) m.appendChild(el("span","warn","هم‌پوشانی با کار قبلی"));
+  var del=el("button","link","حذف کار");
+  del.onclick=function(){area.tasks=area.tasks.filter(function(t){return t!==k}); save(); render();};
+  m.appendChild(del); row.appendChild(m);
+  return row;
+}
+function renderArea(day,a){
+  var box=el("div","area");
+  var h=el("div","ah"); h.appendChild(el("h4",null,a.n));
+  var del=el("button","link","حذف حوزه");
+  del.onclick=function(){
+    if(a.tasks.length && !confirm("حوزهٔ «"+a.n+"» با "+fa(a.tasks.length)+" کارش از این روز حذف شود؟")) return;
+    day.areas=day.areas.filter(function(x){return x!==a}); save(); render();
+  };
+  h.appendChild(del); box.appendChild(h);
+  a.tasks.slice().sort(function(x,y){return (x.s||"99:99")<(y.s||"99:99")?-1:1}).forEach(function(k){box.appendChild(mkTask(k,a,false,false))});
+  var f=el("div","add");
+  var inp=el("input","txt"); inp.type="text"; inp.placeholder="کار تازه…"; inp.setAttribute("aria-label","کار تازه");
+  var s=timeIn("","ساعت شروع"), e=timeIn("","ساعت پایان");
+  var btn=el("button","btn","افزودن");
+  var add=function(){var v=inp.value.trim(); if(!v) return; a.tasks.push({id:uid(),x:v,s:s.value,e:e.value,d:false}); save(); render();};
+  btn.onclick=add; inp.onkeydown=function(ev){if(ev.key==="Enter") add()};
+  f.appendChild(inp); f.appendChild(el("span","cnt","از")); f.appendChild(s); f.appendChild(el("span","cnt","تا")); f.appendChild(e); f.appendChild(btn);
+  box.appendChild(f);
+  return box;
+}
+function renderDay(week,di){
+  var day=week.days[di], t=0, d=0;
+  day.areas.forEach(function(a){a.tasks.forEach(function(k){t++; if(k.d) d++})});
+  var sec=el("section","group");
+  var head=el("div","dh"); head.appendChild(el("h3",null,DAYS[di]+" "+fmtDay(addDays(weekStart(cur),di))));
+  head.appendChild(el("span","cnt",t?fa(d)+" از "+fa(t):"")); sec.appendChild(head);
+  if(mode==="time"){
+    var items=[];
+    day.areas.forEach(function(a){a.tasks.forEach(function(k){items.push({k:k,a:a})})});
+    items.sort(function(x,y){return (x.k.s||"99:99")<(y.k.s||"99:99")?-1:1});
+    if(!items.length) sec.appendChild(el("div","empty","برنامه‌ای برای این روز نیست."));
+    var prevEnd="";
+    items.forEach(function(o){
+      var ov=!!(o.k.s && prevEnd && o.k.s<prevEnd);
+      sec.appendChild(mkTask(o.k,o.a,true,ov));
+      var end=o.k.e||o.k.s; if(end && end>prevEnd) prevEnd=end;
+    });
+  } else {
+    if(!day.areas.length) sec.appendChild(el("div","empty","هنوز حوزه‌ای در این روز نیست."));
+    day.areas.forEach(function(a){sec.appendChild(renderArea(day,a))});
+    var na=el("div","add newarea");
+    var inp=el("input","txt"); inp.type="text"; inp.setAttribute("list","areas"); inp.placeholder="حوزهٔ تازه برای "+DAYS[di]+"…"; inp.setAttribute("aria-label","نام حوزه");
+    var btn=el("button","btn ghost","افزودن حوزه");
+    var add=function(){var v=inp.value.trim(); if(!v) return; areaIn(day,v); save(); render();};
+    btn.onclick=add; inp.onkeydown=function(ev){if(ev.key==="Enter") add()};
+    na.appendChild(inp); na.appendChild(btn); sec.appendChild(na);
+  }
+  return sec;
+}
+function render(){
+  var all=0,dn=0;
+  var tabs=document.getElementById("tabs"); tabs.innerHTML="";
+  state.weeks.forEach(function(w,i){
+    var s=stats(w); all+=s.t; dn+=s.d;
+    var b=el("button","tab"); b.setAttribute("role","tab"); b.setAttribute("aria-selected",i===cur);
+    b.innerHTML="هفتهٔ "+fa(i+1)+(i===realWeek()?" · جاری":"")+"<small>"+fmtDay(weekStart(i))+" تا "+fmtDay(addDays(weekStart(i),6))+"</small><small>"+fa(s.d)+" از "+fa(s.t)+"</small>";
+    b.onclick=function(){cur=i; render();}; tabs.appendChild(b);
+  });
+  if(cur>=state.weeks.length) cur=state.weeks.length-1;
+  var week=state.weeks[cur];
+  Array.prototype.forEach.call(document.querySelectorAll(".pill"),function(b){
+    b.setAttribute("aria-pressed",b.getAttribute("data-m")===mode);
+    b.onclick=function(){mode=b.getAttribute("data-m"); render();};
+  });
+  var p=all?Math.round(dn*100/all):0;
+  document.getElementById("fill").style.width=p+"%";
+  document.getElementById("pct").textContent=fa(p)+"٪";
+  var wt=document.getElementById("wtitle"); wt.value=week.t;
+  wt.onchange=function(){week.t=wt.value.trim()||"بدون عنوان"; save();};
+  document.getElementById("wrange").textContent=fmtDay(weekStart(cur))+" تا "+fmtDay(addDays(weekStart(cur),6));
+  var si=document.getElementById("startIn"); si.value=state.start;
+  si.onchange=function(){ if(!si.value) return; state.start=iso(satOf(pd(si.value))); save(); cur=nowWeekIdx(); render(); };
+  var names={}; state.weeks.forEach(function(w){w.days.forEach(function(d){d.areas.forEach(function(a){names[a.n]=1})})});
+  document.getElementById("areas").innerHTML=Object.keys(names).map(function(n){return "<option value=\""+n.replace(/"/g,"&quot;")+"\">"}).join("");
+  var dt=document.getElementById("dtabs"); dt.innerHTML="";
+  DAYS.forEach(function(name,di){
+    var t=0,d=0; week.days[di].areas.forEach(function(a){a.tasks.forEach(function(k){t++; if(k.d) d++})});
+    var b=el("button","dtab"); b.setAttribute("role","tab"); b.setAttribute("aria-selected",di===curDay);
+    var isToday=(cur===realWeek()&&di===todayIdx());
+    b.innerHTML=name+(isToday?" · امروز":"")+"<small>"+fmtDay(addDays(weekStart(cur),di))+"</small><small>"+(t?fa(d)+" از "+fa(t):"—")+"</small>";
+    b.onclick=function(){curDay=di; render();}; dt.appendChild(b);
+  });
+  var box=document.getElementById("days"); box.innerHTML="";
+  box.appendChild(renderDay(week,curDay));
+}
+document.getElementById("addEmpty").onclick=function(){
+  state.weeks.push({t:"هفتهٔ تازه",days:emptyDays()}); cur=state.weeks.length-1; save(); render();
+};
+document.getElementById("addCopy").onclick=function(){
+  var c=JSON.parse(JSON.stringify(state.weeks[cur])); c.t=c.t+" (کپی)";
+  c.days.forEach(function(d){d.areas.forEach(function(a){a.tasks.forEach(function(k){k.id=uid(); k.d=false})})});
+  state.weeks.push(c); cur=state.weeks.length-1; save(); render();
+};
+document.getElementById("delWeek").onclick=function(){
+  if(state.weeks.length<2){alert("حداقل یک هفته باید بماند."); return;}
+  if(!confirm("«"+state.weeks[cur].t+"» با همهٔ کارهایش حذف شود؟")) return;
+  state.weeks.splice(cur,1); if(cur>=state.weeks.length) cur=state.weeks.length-1; save(); render();
+};
+async function exportData(){
+  var json=JSON.stringify(state,null,2), name="planner-"+iso(new Date())+".json";
+  try{
+    var dl=(window.claude&&window.claude.use)?await window.claude.use("downloads"):null;
+    if(dl){ await dl.save({filename:name,data:json}); return; }
+  }catch(e){ if(e&&e.code==="declined") return; }
+  var a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([json],{type:"application/json"})); a.download=name;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+document.getElementById("exp").onclick=exportData;
+document.getElementById("imp").onclick=function(){document.getElementById("impFile").click();};
+document.getElementById("impFile").onchange=function(ev){
+  var f=ev.target.files[0]; ev.target.value=""; if(!f) return;
+  var r=new FileReader();
+  r.onload=function(){
+    try{
+      var o=JSON.parse(r.result);
+      var ok=o&&Array.isArray(o.weeks)&&o.weeks.length&&o.weeks.every(function(w){return w&&Array.isArray(w.days)&&w.days.length===7});
+      if(!ok) throw new Error("bad");
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(o.start||"")) o.start=iso(satOf(new Date()));
+      if(!confirm("برنامهٔ فعلی با محتوای این فایل جایگزین شود؟")) return;
+      state=o; save(); cur=nowWeekIdx(); render();
+    }catch(e){ alert("فایل معتبر نیست."); }
+  };
+  r.readAsText(f);
+};
+document.getElementById("reset").onclick=function(){
+  if(confirm("تیک همهٔ کارها در همهٔ هفته‌ها پاک شود؟")){state.weeks.forEach(function(w){each(w,function(k){k.d=false})}); save(); render();}
+};
+render();
+function todayIdx(){return (new Date().getDay()+1)%7}
+var fT,fJ,fG,lastToday=todayIdx(),lastWeek=realWeek();
+try{
+  fT=new Intl.DateTimeFormat("fa-IR",{hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false});
+  fJ=new Intl.DateTimeFormat("fa-IR-u-ca-persian",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+  fG=new Intl.DateTimeFormat("en-GB",{day:"numeric",month:"short",year:"numeric"});
+}catch(e){}
+function tick(){
+  var n=new Date(), T=document.getElementById("clkT"), D=document.getElementById("clkD");
+  if(fT){T.textContent=fT.format(n); D.textContent=fJ.format(n)+" · "+fG.format(n);}
+  else{T.textContent=n.toLocaleTimeString(); D.textContent=n.toLocaleDateString();}
+  var t=todayIdx();
+  var rw=realWeek();
+  if(t!==lastToday||rw!==lastWeek){ if(curDay===lastToday) curDay=t; if(cur===clampW(lastWeek)) cur=nowWeekIdx(); lastToday=t; lastWeek=rw; render(); }
+}
+tick(); setInterval(tick,1000);
+</script>
+</body>
+</html>
