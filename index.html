@@ -74,6 +74,12 @@ input[type=time]{direction:ltr}
 .warn{color:var(--warn);font-size:.8rem}
 .link{border:0;background:none;color:#c62828;cursor:pointer;font:inherit;font-size:.85rem;padding:0 4px}
 .link:hover{text-decoration:underline}
+.pen{border:0;background:none;color:var(--muted);cursor:pointer;padding:2px 4px;line-height:0;margin-top:6px;flex:none}
+.pen:hover{color:var(--accent)}
+.hw{display:flex;align-items:center;gap:4px}
+.hw .pen{margin-top:0}
+input.edit{font:inherit;padding:2px 8px;border-radius:8px;border:1px solid var(--accent);background:var(--bg);color:var(--ink);min-width:0}
+.line input.edit{width:auto;height:auto;margin-top:2px;flex:1;cursor:text}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .link{color:#ff8a80}}
 :root[data-theme="dark"] .link{color:#ff8a80}
 .add{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px}
@@ -135,7 +141,7 @@ var TPL=[
  "عادت‌ها":["ارزیابی ماه: چه ماند و چه حذف شود؟","برنامهٔ ماه بعد را بنویس"]}}
 ];
 var AT={"لینوکس مینت":["20:00","21:00"],"دانشگاه":["16:00","18:00"],"امنیت و پروژه":["21:00","22:30"],"عادت‌ها":["07:00","07:30"]};
-var KEY="month-plan-v2", cur=0, mode="area", state=null, curDay=(new Date().getDay()+1)%7;
+var KEY="month-plan-v2", cur=0, mode="time", state=null, curDay=(new Date().getDay()+1)%7;
 function uid(){return "t"+Math.random().toString(36).slice(2,10)}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
 function emptyDays(){return [0,1,2,3,4,5,6].map(function(){return {areas:[]}})}
@@ -180,13 +186,26 @@ function timeIn(val,label,fn){
   if(fn) t.onchange=function(){fn(t.value)};
   return t;
 }
+function pencil(target,get,set){
+  var b=el("button","pen"); b.type="button"; b.title="ویرایش"; b.setAttribute("aria-label","ویرایش نام");
+  b.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>';
+  b.onclick=function(){
+    var inp=el("input","edit"); inp.type="text"; inp.value=get(); inp.setAttribute("aria-label","ویرایش نام");
+    target.replaceWith(inp); b.style.display="none"; inp.focus(); inp.select();
+    var done=false;
+    function commit(ok){ if(done) return; done=true; if(ok){var v=inp.value.trim(); if(v){set(v); save();}} render(); }
+    inp.onkeydown=function(ev){ if(ev.key==="Enter") commit(true); else if(ev.key==="Escape") commit(false); };
+    inp.onblur=function(){commit(true)};
+  };
+  return b;
+}
 function mkTask(k,area,tag,overlap){
   var row=el("div","task"+(k.d?" on":""));
   var line=el("div","line");
   var cb=el("input"); cb.type="checkbox"; cb.id="c"+k.id; cb.checked=!!k.d;
   cb.onchange=function(){k.d=cb.checked; save(); render();};
   var lb=el("label",null,k.x); lb.htmlFor=cb.id;
-  line.appendChild(cb); line.appendChild(lb); row.appendChild(line);
+  line.appendChild(cb); line.appendChild(lb); line.appendChild(pencil(lb,function(){return k.x},function(v){k.x=v})); row.appendChild(line);
   var m=el("div","meta");
   if(tag) m.appendChild(el("span","tag",area.n));
   m.appendChild(el("span",null,"از")); m.appendChild(timeIn(k.s,"ساعت شروع",function(v){k.s=v; save(); render();}));
@@ -199,7 +218,12 @@ function mkTask(k,area,tag,overlap){
 }
 function renderArea(day,a){
   var box=el("div","area");
-  var h=el("div","ah"); h.appendChild(el("h4",null,a.n));
+  var h=el("div","ah"); var h4=el("h4",null,a.n), hw=el("div","hw"); hw.appendChild(h4);
+  hw.appendChild(pencil(h4,function(){return a.n},function(v){
+    var ex=day.areas.filter(function(x){return x!==a&&x.n===v})[0];
+    if(ex){ex.tasks=ex.tasks.concat(a.tasks); day.areas=day.areas.filter(function(x){return x!==a});} else a.n=v;
+  }));
+  h.appendChild(hw);
   var del=el("button","link","حذف حوزه");
   del.onclick=function(){
     if(a.tasks.length && !confirm("حوزهٔ «"+a.n+"» با "+fa(a.tasks.length)+" کارش از این روز حذف شود؟")) return;
