@@ -75,7 +75,16 @@ input[type=date]{font:inherit;font-size:.88rem;padding:2px 8px;border-radius:8px
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}
 .ovb{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:14px;padding:18px 20px;max-width:420px;width:100%}
 .ovb p{margin:0 0 14px}
+.gp{border:0;background:none;color:var(--muted);cursor:grab;padding:2px 4px;line-height:0;margin-top:6px;flex:none;touch-action:none}
+.gp:hover{color:var(--accent)}
+.task.drag{background:var(--surface);border:1px solid var(--accent);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.28);padding:6px 12px;cursor:grabbing}
+.ph{border:2px dashed var(--accent);border-radius:10px;background:var(--accent-soft);margin:4px 0;opacity:.75}
+body.dragging,body.dragging *{cursor:grabbing!important;user-select:none}
 .ovr{display:flex;gap:8px;flex-wrap:wrap}
+.ovb label{display:block;margin:10px 0 2px;font-size:.9rem;color:var(--muted)}
+.ovb select,.ovb input{width:100%;font:inherit;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.parts{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 4px}
+.tm{direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600}
 input[type=time],input[type=text]{font:inherit;font-size:.88rem;padding:2px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
 input[type=time]{direction:ltr}
 .tag{font-size:.8rem;background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:0 10px}
@@ -140,9 +149,8 @@ The World Is Yours...
 var LANG=(function(){try{return localStorage.getItem("planner-lang")==="en"?"en":"fa";}catch(e){return "fa";}})();
 document.documentElement.setAttribute("lang",LANG); document.documentElement.setAttribute("dir",LANG==="fa"?"rtl":"ltr");
 var DAYS=LANG==="fa"?["شنبه","یکشنبه","دوشنبه","سه‌شنبه","چهارشنبه","پنجشنبه","جمعه"]:["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
-var EN={"هفتهٔ خالی +":"+ Empty week","کپی این هفته +":"+ Copy this week","حوزه‌ها":"Areas","ساعت‌بندی":"Schedule","حذف هفته":"Delete week","شروع هفتهٔ اول:":"First week starts:","هدف‌های این هفته…":"This week’s targets…","خروجی گرفتن":"Export","بارگذاری از فایل":"Import from file","پاک‌کردن همهٔ تیک‌ها":"Clear all checks","روزهای هفته":"Days of the week","عنوان هفته":"Week title","از":"from","تا":"to","هم‌پوشانی با کار قبلی":"Overlaps the previous task","حذف کار":"Delete task","حذف حوزه":"Delete area","افزودن":"Add","افزودن حوزه":"Add area","یادداشت":"Notes","هنوز حوزه‌ای در این روز نیست.":"No areas on this day yet.","برنامه‌ای برای این روز نیست.":"Nothing planned for this day.","انجام نشد":"Not done","ویرایش":"Edit","ویرایش نام":"Edit name","ساعت شروع":"Start time","ساعت پایان":"End time","کار تازه":"New task","کار تازه…":"New task…","نام حوزه":"Area name","حداقل یک هفته باید بماند.":"Keep at least one week.","فایل معتبر نیست.":"Invalid file.","برنامهٔ فعلی با محتوای این فایل جایگزین شود؟":"Replace the current planner with this file?","تیک همهٔ کارها در همهٔ هفته‌ها پاک شود؟":"Clear every check and ✗ in all weeks?"};
+var EN={"هفتهٔ خالی +":"+ Empty week","کپی این هفته +":"+ Copy this week","حوزه‌ها":"Areas","ساعت‌بندی":"Schedule","حذف هفته":"Delete week","شروع هفتهٔ اول:":"First week starts:","هدف‌های این هفته…":"This week’s targets…","خروجی گرفتن":"Export","بارگذاری از فایل":"Import from file","پاک‌کردن همهٔ تیک‌ها":"Clear all checks","روزهای هفته":"Days of the week","عنوان هفته":"Week title","حذف کار":"Delete task","حذف حوزه":"Delete area","افزودن حوزه":"Add area","یادداشت":"Notes","هنوز حوزه‌ای در این روز نیست.":"No areas on this day yet.","برنامه‌ای برای این روز نیست.":"Nothing planned for this day.","انجام نشد":"Not done","ویرایش":"Edit","ویرایش نام":"Edit name","جابه‌جایی":"Move","نام حوزه":"Area name","حداقل یک هفته باید بماند.":"Keep at least one week.","فایل معتبر نیست.":"Invalid file.","برنامهٔ فعلی با محتوای این فایل جایگزین شود؟":"Replace the current planner with this file?","تیک همهٔ کارها در همهٔ هفته‌ها پاک شود؟":"Clear every check and ✗ in all weeks?"};
 function L(f,e){return LANG==="fa"?f:e;}
-function cmpT(a,b){a=a||"99:99"; b=b||"99:99"; return a<b?-1:a>b?1:0;}
 function dialog(msg,onOk){
   var ov=el("div","ov"), bx=el("div","ovb"), row=el("div","ovr");
   bx.setAttribute("role","dialog"); bx.appendChild(el("p",null,tr(msg)));
@@ -208,11 +216,6 @@ var fa=function(n){return LANG==="fa"?String(n).replace(/\d/g,function(d){return
 function el(tag,cls,txt){var n=document.createElement(tag); if(cls) n.className=cls; if(txt!==undefined) n.textContent=txt; return n;}
 function each(week,fn){week.days.forEach(function(d,di){d.areas.forEach(function(a){a.tasks.forEach(function(k){fn(k,a,d,di)})})})}
 function stats(week){var t=0,d=0; each(week,function(k){t++; if(k.d) d++}); return {t:t,d:d};}
-function timeIn(val,label,fn){
-  var t=el("input"); t.type="time"; t.value=val||""; t.setAttribute("aria-label",label);
-  if(fn) t.onchange=function(){fn(t.value)};
-  return t;
-}
 function pencil(target,get,set){
   var b=el("button","pen"); b.type="button"; b.title="ویرایش"; b.setAttribute("aria-label","ویرایش نام");
   b.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>';
@@ -226,8 +229,23 @@ function pencil(target,get,set){
   };
   return b;
 }
-function mkTask(k,area,tag,overlap){
+function toMin(s){var p=(s||"").split(":"); return p.length===2?(+p[0])*60+(+p[1]):NaN;}
+function hhmm(t){t=((t%1440)+1440)%1440; return ("0"+Math.floor(t/60)).slice(-2)+":"+("0"+(t%60)).slice(-2);}
+function durOf(k){ if(k.m>0) return k.m; var d=toMin(k.e)-toMin(k.s); return d>0?d:30; }
+function layout(day){
+  var items=[]; day.areas.forEach(function(a){a.tasks.forEach(function(k){items.push({k:k,a:a});});});
+  items.sort(function(x,y){return (x.k.o||0)-(y.k.o||0);});
+  var t=360; items.forEach(function(o){o.s=t; t+=durOf(o.k); o.e=t;});
+  return items;
+}
+function durLabel(m){ if(m<60) return L(fa(m)+" دقیقه",m+" min"); var h=m/60; return L(fa(h).replace(".","٫")+" ساعت",h+" h"); }
+function partLabel(m){
+  return L({30:"پارت نیم ساعتی",60:"پارت یک ساعتی",90:"پارت یک و نیم ساعتی",120:"پارت دو ساعتی"}[m],
+           {30:"30-min part",60:"1-hour part",90:"1.5-hour part",120:"2-hour part"}[m]);
+}
+function mkTask(k,area,tag,pos){
   var row=el("div","task"+(k.d?" on":"")+(k.f?" fail":""));
+  row._k=k;
   var line=el("div","line");
   var cb=el("input"); cb.type="checkbox"; cb.id="c"+k.id; cb.checked=!!k.d;
   cb.onchange=function(){k.d=cb.checked; if(k.d) k.f=false; save(); render();};
@@ -235,18 +253,19 @@ function mkTask(k,area,tag,overlap){
   var xb=el("button","xb"+(k.f?" on":"")); xb.type="button"; xb.title="انجام نشد"; xb.setAttribute("aria-label","انجام نشد"); xb.setAttribute("aria-pressed",!!k.f);
   xb.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
   xb.onclick=function(){k.f=!k.f; if(k.f) k.d=false; save(); render();};
-  line.appendChild(cb); line.appendChild(lb); line.appendChild(pencil(lb,function(){return k.x},function(v){k.x=v})); line.appendChild(xb); row.appendChild(line);
+  var gp=el("button","gp"); gp.type="button"; gp.title="جابه‌جایی"; gp.setAttribute("aria-label","جابه‌جایی");
+  gp.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.8"/><circle cx="15" cy="6" r="1.8"/><circle cx="9" cy="12" r="1.8"/><circle cx="15" cy="12" r="1.8"/><circle cx="9" cy="18" r="1.8"/><circle cx="15" cy="18" r="1.8"/></svg>';
+  line.appendChild(cb); line.appendChild(lb); line.appendChild(pencil(lb,function(){return k.x},function(v){k.x=v})); line.appendChild(gp); line.appendChild(xb); row.appendChild(line);
   var m=el("div","meta");
   if(tag) m.appendChild(el("span","tag",area.n));
-  m.appendChild(el("span",null,"از")); m.appendChild(timeIn(k.s,"ساعت شروع",function(v){k.s=v; save(); render();}));
-  m.appendChild(el("span",null,"تا")); m.appendChild(timeIn(k.e,"ساعت پایان",function(v){k.e=v; save(); render();}));
-  if(overlap) m.appendChild(el("span","warn","هم‌پوشانی با کار قبلی"));
+  m.appendChild(el("span","tm",fa(hhmm(pos.s))+" – "+fa(hhmm(pos.e))));
+  m.appendChild(el("span",null,durLabel(durOf(k))));
   var del=el("button","link","حذف کار");
   del.onclick=function(){area.tasks=area.tasks.filter(function(t){return t!==k}); save(); render();};
   m.appendChild(del); row.appendChild(m);
   return row;
 }
-function renderArea(day,a){
+function renderArea(day,a,items){
   var box=el("div","area");
   var h=el("div","ah"); var h4=el("h4",null,a.n), hw=el("div","hw"); hw.appendChild(h4);
   hw.appendChild(pencil(h4,function(){return a.n},function(v){
@@ -260,16 +279,98 @@ function renderArea(day,a){
     if(a.tasks.length) dialog("حوزهٔ «"+a.n+"» با "+fa(a.tasks.length)+" کارش از این روز حذف شود؟",go); else go();
   };
   h.appendChild(del); box.appendChild(h);
-  a.tasks.slice().sort(function(x,y){return cmpT(x.s,y.s)}).forEach(function(k){box.appendChild(mkTask(k,a,false,false))});
-  var f=el("div","add");
-  var inp=el("input","txt"); inp.type="text"; inp.placeholder="کار تازه…"; inp.setAttribute("aria-label","کار تازه");
-  var s=timeIn("","ساعت شروع"), e=timeIn("","ساعت پایان");
-  var btn=el("button","btn","افزودن");
-  var add=function(){var v=inp.value.trim(); if(!v) return; a.tasks.push({id:uid(),x:v,s:s.value,e:e.value,d:false}); save(); render();};
-  btn.onclick=add; inp.onkeydown=function(ev){if(ev.key==="Enter") add()};
-  f.appendChild(inp); f.appendChild(el("span","cnt","از")); f.appendChild(s); f.appendChild(el("span","cnt","تا")); f.appendChild(e); f.appendChild(btn);
-  box.appendChild(f);
+  items.filter(function(o){return o.a===a;}).forEach(function(o){box.appendChild(mkTask(o.k,a,false,o));});
+  enableSort(box,day);
   return box;
+}
+function applyOrder(day,oldV,newV){
+  var G=layout(day).map(function(o){return o.k;});
+  var slots=oldV.map(function(k){return G.indexOf(k);}).sort(function(a,b){return a-b;});
+  newV.forEach(function(k,i){G[slots[i]]=k;});
+  G.forEach(function(k,i){k.o=i+1;});
+}
+function suppressClick(){
+  var f=function(e){e.stopPropagation(); e.preventDefault();};
+  window.addEventListener("click",f,true);
+  setTimeout(function(){window.removeEventListener("click",f,true);},60);
+}
+function isTask(c){return c.classList&&c.classList.contains("task");}
+function startDrag(container,day,row,pid,sx,sy){
+  var rect=row.getBoundingClientRect(), offY=sy-rect.top, lastY=sy, raf=0, done=false;
+  var oldV=[].filter.call(container.children,isTask).map(function(c){return c._k;});
+  var ph=el("div","ph"); ph.style.height=rect.height+"px";
+  container.insertBefore(ph,row);
+  row.classList.add("drag");
+  row.style.cssText="position:fixed;left:"+rect.left+"px;top:"+rect.top+"px;width:"+rect.width+"px;z-index:60";
+  document.body.classList.add("dragging");
+  function place(){
+    var others=[].filter.call(container.children,function(c){return isTask(c)&&c!==row;});
+    if(!others.length) return;
+    var ref=null;
+    for(var i=0;i<others.length;i++){var r=others[i].getBoundingClientRect(); if(lastY<r.top+r.height/2){ref=others[i];break;}}
+    var target=ref||others[others.length-1].nextSibling;
+    if(target!==ph&&target!==ph.nextSibling) container.insertBefore(ph,target);
+  }
+  function move(ev){ if(ev.pointerId!==pid) return; lastY=ev.clientY; row.style.top=(lastY-offY)+"px"; place(); }
+  function loop(){
+    if(done) return;
+    var h=window.innerHeight, sp=0;
+    if(lastY<70) sp=-Math.ceil((70-lastY)/4); else if(lastY>h-70) sp=Math.ceil((lastY-(h-70))/4);
+    if(sp){window.scrollBy(0,sp); place();}
+    raf=requestAnimationFrame(loop);
+  }
+  function up(ev){ if(ev.pointerId===pid) finish(true); }
+  function cancel(ev){ if(ev.pointerId===pid) finish(false); }
+  function key(ev){ if(ev.key==="Escape") finish(false); }
+  function tm(ev){ ev.preventDefault(); }
+  function cm(ev){ ev.preventDefault(); }
+  function finish(commit){
+    if(done) return; done=true; cancelAnimationFrame(raf);
+    document.removeEventListener("pointermove",move); document.removeEventListener("pointerup",up);
+    document.removeEventListener("pointercancel",cancel); document.removeEventListener("keydown",key);
+    document.removeEventListener("touchmove",tm); document.removeEventListener("contextmenu",cm);
+    document.body.classList.remove("dragging");
+    var newV=[];
+    [].forEach.call(container.children,function(c){ if(c===ph) newV.push(row._k); else if(isTask(c)&&c!==row) newV.push(c._k); });
+    suppressClick();
+    if(commit){ applyOrder(day,oldV,newV); save(); }
+    render();
+  }
+  document.addEventListener("pointermove",move); document.addEventListener("pointerup",up);
+  document.addEventListener("pointercancel",cancel); document.addEventListener("keydown",key);
+  document.addEventListener("touchmove",tm,{passive:false}); document.addEventListener("contextmenu",cm);
+  raf=requestAnimationFrame(loop);
+}
+function enableSort(container,day){
+  container.addEventListener("pointerdown",function(e){
+    if(e.button!==undefined&&e.button!==0) return;
+    var gp=e.target.closest(".gp"); if(!gp) return;
+    var row=gp.closest(".task"); if(!row||row.parentNode!==container) return;
+    e.preventDefault();
+    startDrag(container,day,row,e.pointerId,e.clientX,e.clientY);
+  });
+}
+function openPart(day,mins){
+  if(!day.areas.length){ dialog(L("ابتدا از بخش حوزه‌بندی یک حوزه اضافه کن.","First add an area from the Areas section.")); return; }
+  var its=layout(day), st=its.length?its[its.length-1].e:360;
+  var ov=el("div","ov"), bx=el("div","ovb"), close=function(){ov.remove();};
+  bx.setAttribute("role","dialog");
+  bx.appendChild(el("p",null,partLabel(mins)));
+  bx.appendChild(el("p","cnt",L("زمان: ","Time: ")+fa(hhmm(st))+" – "+fa(hhmm(st+mins))));
+  bx.appendChild(el("label",null,L("حوزه","Area")));
+  var sel=el("select"); day.areas.forEach(function(a,i){var o=el("option",null,a.n); o.value=i; sel.appendChild(o);}); bx.appendChild(sel);
+  bx.appendChild(el("label",null,L("نام کار","Task name")));
+  var inp=el("input"); inp.type="text"; bx.appendChild(inp);
+  var row=el("div","ovr"); row.style.marginTop="14px";
+  var save1=function(){
+    var v=inp.value.trim(); if(!v){inp.focus(); return;}
+    day.areas[+sel.value].tasks.push({id:uid(),x:v,m:mins,o:Date.now(),d:false});
+    save(); close(); render();
+  };
+  var ok=el("button","btn",L("ذخیره","Save")); ok.onclick=save1; row.appendChild(ok);
+  var no=el("button","btn ghost",L("انصراف","Cancel")); no.onclick=close; row.appendChild(no);
+  inp.onkeydown=function(ev){ if(ev.key==="Enter") save1(); else if(ev.key==="Escape") close(); };
+  bx.appendChild(row); ov.appendChild(bx); document.body.appendChild(ov); inp.focus();
 }
 function renderDay(week,di){
   var day=week.days[di], t=0, d=0;
@@ -277,20 +378,17 @@ function renderDay(week,di){
   var sec=el("section","group");
   var head=el("div","dh"); head.appendChild(el("h3",null,DAYS[di]+" "+fmtDay(addDays(weekStart(cur),di))));
   head.appendChild(el("span","cnt",t?fa(d)+" از "+fa(t):"")); sec.appendChild(head);
+  var pb=el("div","parts");
+  [30,60,90,120].forEach(function(m){var b=el("button","btn ghost",partLabel(m)); b.type="button"; b.onclick=function(){openPart(day,m);}; pb.appendChild(b);});
+  sec.appendChild(pb);
+  var items=layout(day);
   if(mode==="time"){
-    var items=[];
-    day.areas.forEach(function(a){a.tasks.forEach(function(k){items.push({k:k,a:a})})});
-    items.sort(function(x,y){return cmpT(x.k.s,y.k.s)});
     if(!items.length) sec.appendChild(el("div","empty","برنامه‌ای برای این روز نیست."));
-    var prevEnd="";
-    items.forEach(function(o){
-      var ov=!!(o.k.s && prevEnd && o.k.s<prevEnd);
-      sec.appendChild(mkTask(o.k,o.a,true,ov));
-      var end=o.k.e||o.k.s; if(end && end>prevEnd) prevEnd=end;
-    });
+    items.forEach(function(o){sec.appendChild(mkTask(o.k,o.a,true,o));});
+    enableSort(sec,day);
   } else {
     if(!day.areas.length) sec.appendChild(el("div","empty","هنوز حوزه‌ای در این روز نیست."));
-    day.areas.forEach(function(a){sec.appendChild(renderArea(day,a))});
+    day.areas.forEach(function(a){sec.appendChild(renderArea(day,a,items))});
     var na=el("div","add newarea");
     var inp=el("input","txt"); inp.type="text"; inp.setAttribute("list","areas"); inp.placeholder="حوزهٔ تازه برای "+DAYS[di]+"…"; inp.setAttribute("aria-label","نام حوزه");
     var btn=el("button","btn ghost","افزودن حوزه");
