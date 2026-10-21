@@ -80,6 +80,16 @@ input[type=time]{direction:ltr}
 .hw .pen{margin-top:0}
 input.edit{font:inherit;padding:2px 8px;border-radius:8px;border:1px solid var(--accent);background:var(--bg);color:var(--ink);min-width:0}
 .line input.edit{width:auto;height:auto;margin-top:2px;flex:1;cursor:text}
+.xb{border:1px solid transparent;background:none;color:var(--muted);cursor:pointer;padding:2px 4px;line-height:0;margin-top:5px;border-radius:6px;flex:none}
+.xb:hover{color:#c62828}
+.xb.on{background:#c62828;color:#fff}
+.task.fail label{color:#c62828;text-decoration:line-through}
+textarea.note{width:100%;font:inherit;font-size:.95rem;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);resize:vertical;line-height:1.7}
+.notebox{border-top:1px solid var(--line);margin-top:12px;padding-top:6px}
+.notebox h4{font-size:.95rem;margin:4px 0;color:var(--accent)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .task.fail label,:root:not([data-theme="light"]) .xb:hover{color:#ff8a80}:root:not([data-theme="light"]) .xb.on{background:#ff8a80;color:#1b0f0e}}
+:root[data-theme="dark"] .task.fail label,:root[data-theme="dark"] .xb:hover{color:#ff8a80}
+:root[data-theme="dark"] .xb.on{background:#ff8a80;color:#1b0f0e}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .link{color:#ff8a80}}
 :root[data-theme="dark"] .link{color:#ff8a80}
 .add{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px}
@@ -111,6 +121,7 @@ The World Is Yours...
   </div>
   <div class="wt"><input type="text" id="wtitle" aria-label="عنوان هفته"><span id="wrange"></span><button class="link" id="delWeek">حذف هفته</button></div>
   <div class="startrow"><label for="startIn">شروع هفتهٔ اول:</label><input type="date" id="startIn"></div>
+  <section class="group"><div class="dh"><h3 style="color:var(--accent)">Target</h3></div><textarea class="note" id="target" rows="3" aria-label="Target" placeholder="هدف‌های این هفته…"></textarea></section>
   <div class="dtabs" id="dtabs" role="tablist" aria-label="روزهای هفته"></div>
   <div id="days"></div>
   <datalist id="areas"></datalist>
@@ -200,12 +211,15 @@ function pencil(target,get,set){
   return b;
 }
 function mkTask(k,area,tag,overlap){
-  var row=el("div","task"+(k.d?" on":""));
+  var row=el("div","task"+(k.d?" on":"")+(k.f?" fail":""));
   var line=el("div","line");
   var cb=el("input"); cb.type="checkbox"; cb.id="c"+k.id; cb.checked=!!k.d;
-  cb.onchange=function(){k.d=cb.checked; save(); render();};
+  cb.onchange=function(){k.d=cb.checked; if(k.d) k.f=false; save(); render();};
   var lb=el("label",null,k.x); lb.htmlFor=cb.id;
-  line.appendChild(cb); line.appendChild(lb); line.appendChild(pencil(lb,function(){return k.x},function(v){k.x=v})); row.appendChild(line);
+  var xb=el("button","xb"+(k.f?" on":"")); xb.type="button"; xb.title="انجام نشد"; xb.setAttribute("aria-label","انجام نشد"); xb.setAttribute("aria-pressed",!!k.f);
+  xb.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+  xb.onclick=function(){k.f=!k.f; if(k.f) k.d=false; save(); render();};
+  line.appendChild(cb); line.appendChild(lb); line.appendChild(pencil(lb,function(){return k.x},function(v){k.x=v})); line.appendChild(xb); row.appendChild(line);
   var m=el("div","meta");
   if(tag) m.appendChild(el("span","tag",area.n));
   m.appendChild(el("span",null,"از")); m.appendChild(timeIn(k.s,"ساعت شروع",function(v){k.s=v; save(); render();}));
@@ -268,6 +282,10 @@ function renderDay(week,di){
     btn.onclick=add; inp.onkeydown=function(ev){if(ev.key==="Enter") add()};
     na.appendChild(inp); na.appendChild(btn); sec.appendChild(na);
   }
+  var nb=el("div","notebox"); nb.appendChild(el("h4",null,"یادداشت"));
+  var ta=el("textarea","note"); ta.rows=3; ta.value=day.note||""; ta.placeholder="یادداشت "+DAYS[di]+"…"; ta.setAttribute("aria-label","یادداشت");
+  ta.oninput=function(){day.note=ta.value; save();};
+  nb.appendChild(ta); sec.appendChild(nb);
   return sec;
 }
 function render(){
@@ -292,6 +310,7 @@ function render(){
   wt.onchange=function(){week.t=wt.value.trim()||"بدون عنوان"; save();};
   document.getElementById("wrange").textContent=fmtDay(weekStart(cur))+" تا "+fmtDay(addDays(weekStart(cur),6));
   var si=document.getElementById("startIn"); si.value=state.start;
+  var tg=document.getElementById("target"); tg.value=week.target||""; tg.oninput=function(){week.target=tg.value; save();};
   si.onchange=function(){ if(!si.value) return; state.start=iso(satOf(pd(si.value))); save(); cur=nowWeekIdx(); render(); };
   var names={}; state.weeks.forEach(function(w){w.days.forEach(function(d){d.areas.forEach(function(a){names[a.n]=1})})});
   document.getElementById("areas").innerHTML=Object.keys(names).map(function(n){return "<option value=\""+n.replace(/"/g,"&quot;")+"\">"}).join("");
@@ -311,7 +330,7 @@ document.getElementById("addEmpty").onclick=function(){
 };
 document.getElementById("addCopy").onclick=function(){
   var c=JSON.parse(JSON.stringify(state.weeks[cur])); c.t=c.t+" (کپی)";
-  c.days.forEach(function(d){d.areas.forEach(function(a){a.tasks.forEach(function(k){k.id=uid(); k.d=false})})});
+  c.days.forEach(function(d){d.areas.forEach(function(a){a.tasks.forEach(function(k){k.id=uid(); k.d=false; k.f=false})})});
   state.weeks.push(c); cur=state.weeks.length-1; save(); render();
 };
 document.getElementById("delWeek").onclick=function(){
@@ -347,7 +366,7 @@ document.getElementById("impFile").onchange=function(ev){
   r.readAsText(f);
 };
 document.getElementById("reset").onclick=function(){
-  if(confirm("تیک همهٔ کارها در همهٔ هفته‌ها پاک شود؟")){state.weeks.forEach(function(w){each(w,function(k){k.d=false})}); save(); render();}
+  if(confirm("تیک همهٔ کارها در همهٔ هفته‌ها پاک شود؟")){state.weeks.forEach(function(w){each(w,function(k){k.d=false; k.f=false})}); save(); render();}
 };
 render();
 function todayIdx(){return (new Date().getDay()+1)%7}
