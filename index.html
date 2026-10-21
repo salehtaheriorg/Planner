@@ -128,7 +128,7 @@ The World Is Yours...
     <button class="pill" data-m="area">حوزه‌ها</button>
     <button class="pill" data-m="time">ساعت‌بندی</button>
   </div>
-  <div class="wt"><input type="text" id="wtitle" aria-label="عنوان هفته"><span id="wrange"></span><button class="link" id="delWeek">حذف هفته</button></div>
+  <div class="wt"><input type="text" id="wtitle" aria-label="عنوان هفته" placeholder="عنوان هفته"><span id="wrange"></span><button class="link" id="delWeek">حذف هفته</button></div>
   <div class="startrow"><label for="startIn">شروع هفتهٔ اول:</label><input type="date" id="startIn"></div>
   <section class="group"><div class="dh"><h3 style="color:var(--accent)">Target</h3></div><textarea class="note" id="target" rows="3" aria-label="Target" placeholder="هدف‌های این هفته…"></textarea></section>
   <div class="dtabs" id="dtabs" role="tablist" aria-label="روزهای هفته"></div>
@@ -140,52 +140,6 @@ The World Is Yours...
 var LANG=(function(){try{return localStorage.getItem("planner-lang")==="en"?"en":"fa";}catch(e){return "fa";}})();
 document.documentElement.setAttribute("lang",LANG); document.documentElement.setAttribute("dir",LANG==="fa"?"rtl":"ltr");
 var DAYS=LANG==="fa"?["شنبه","یکشنبه","دوشنبه","سه‌شنبه","چهارشنبه","پنجشنبه","جمعه"]:["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
-var TPL=[
-{t:"پایه‌ریزی",g:{
- "لینوکس مینت":["سیستم را با sudo apt update && sudo apt upgrade به‌روز کن","با Timeshift یک snapshot بگیر","دستورات ls، cd، cp، mv و rm را تمرین کن"],
- "دانشگاه":["سرفصل و تاریخ امتحان همهٔ درس‌ها را یک‌جا بنویس","ساعت‌های ثابت مطالعه را در تقویم بگذار"],
- "امنیت و پروژه":["یک پروژهٔ اصلی برای این ماه انتخاب کن","مخزن git و README پروژه را بساز"],
- "عادت‌ها":["ساعت خواب و بیداری ثابت را شروع کن","۲۰ دقیقه پیاده‌روی کن"]}},
-{t:"ابزارها",g:{
- "لینوکس مینت":["alias و تنظیمات پوستهٔ bash را شخصی‌سازی کن","با apt، flatpak و dpkg نصب و حذف برنامه را تمرین کن","کلید SSH بساز و به GitHub اضافه کن"],
- "دانشگاه":["فصل‌های عقب‌مانده را مرور کن","تمرین‌های هفتهٔ جاری را کامل کن"],
- "امنیت و پروژه":["یک writeup امنیتی بخوان و خلاصه‌اش را بنویس","بخش اول پروژه را کد بزن و commit کن"],
- "عادت‌ها":["یک روز را بدون شبکه‌های اجتماعی بگذران","ورزش کن"]}},
-{t:"عمق",g:{
- "لینوکس مینت":["یک اسکریپت bash برای کار تکراری خودت بنویس","با cron یا systemd timer آن را زمان‌بندی کن","از پوشه‌های مهم با rsync پشتیبان بگیر"],
- "دانشگاه":["نمونه‌سؤال‌های امتحان را حل کن","موضوعات سخت را از استاد یا هم‌کلاسی‌ها بپرس"],
- "امنیت و پروژه":["بخش اصلی پروژه را تمام کن","برای آن تست یا مستندات بنویس"],
- "عادت‌ها":["مرور هفتگی: چه چیزی خوب پیش رفت؟","خواب منظم را حفظ کن"]}},
-{t:"جمع‌بندی",g:{
- "لینوکس مینت":["فهرست برنامه‌های نصب‌شده و تنظیمات مهم را ذخیره کن","یک snapshot نهایی با Timeshift بگیر"],
- "دانشگاه":["مرور نهایی همهٔ درس‌ها","وسایل و برنامهٔ امتحان‌ها را آماده کن"],
- "امنیت و پروژه":["پروژه را پاک‌سازی و منتشر کن","یادداشتی دربارهٔ آنچه یاد گرفتی بنویس"],
- "عادت‌ها":["ارزیابی ماه: چه ماند و چه حذف شود؟","برنامهٔ ماه بعد را بنویس"]}}
-];
-var AT={"لینوکس مینت":["20:00","21:00"],"دانشگاه":["16:00","18:00"],"امنیت و پروژه":["21:00","22:30"],"عادت‌ها":["07:00","07:30"]};
-var TPL_EN=[
-{t:"Setup",g:{
- "Linux Mint":["Update the system with sudo apt update && sudo apt upgrade","Take a Timeshift snapshot","Practice ls, cd, cp, mv and rm"],
- "University":["List syllabi and exam dates for every course","Block fixed study hours in the calendar"],
- "Security & Projects":["Pick one main project for the month","Create the git repo and README"],
- "Habits":["Fix a steady sleep and wake time","Walk for 20 minutes"]}},
-{t:"Tools",g:{
- "Linux Mint":["Customize bash aliases and settings","Practice installing and removing apps with apt, flatpak and dpkg","Create an SSH key and add it to GitHub"],
- "University":["Review lagging chapters","Finish this week’s exercises"],
- "Security & Projects":["Read a security writeup and summarize it","Code the first part of the project and commit"],
- "Habits":["Spend one day without social media","Work out"]}},
-{t:"Depth",g:{
- "Linux Mint":["Write a bash script for a repetitive task","Schedule it with cron or a systemd timer","Back up key folders with rsync"],
- "University":["Solve practice exam questions","Ask the instructor or classmates about hard topics"],
- "Security & Projects":["Finish the core of the project","Write tests or docs for it"],
- "Habits":["Weekly review: what went well?","Keep a regular sleep schedule"]}},
-{t:"Wrap-up",g:{
- "Linux Mint":["Save the list of installed apps and key settings","Take a final Timeshift snapshot"],
- "University":["Final review of all courses","Prepare supplies and a plan for exams"],
- "Security & Projects":["Clean up and publish the project","Write a note on what you learned"],
- "Habits":["Monthly review: what stays, what goes?","Write next month’s plan"]}}
-];
-var AT_EN={"Linux Mint":["20:00","21:00"],"University":["16:00","18:00"],"Security & Projects":["21:00","22:30"],"Habits":["07:00","07:30"]};
 var EN={"هفتهٔ خالی +":"+ Empty week","کپی این هفته +":"+ Copy this week","حوزه‌ها":"Areas","ساعت‌بندی":"Schedule","حذف هفته":"Delete week","شروع هفتهٔ اول:":"First week starts:","هدف‌های این هفته…":"This week’s targets…","خروجی گرفتن":"Export","بارگذاری از فایل":"Import from file","پاک‌کردن همهٔ تیک‌ها":"Clear all checks","روزهای هفته":"Days of the week","عنوان هفته":"Week title","از":"from","تا":"to","هم‌پوشانی با کار قبلی":"Overlaps the previous task","حذف کار":"Delete task","حذف حوزه":"Delete area","افزودن":"Add","افزودن حوزه":"Add area","یادداشت":"Notes","هنوز حوزه‌ای در این روز نیست.":"No areas on this day yet.","برنامه‌ای برای این روز نیست.":"Nothing planned for this day.","انجام نشد":"Not done","ویرایش":"Edit","ویرایش نام":"Edit name","ساعت شروع":"Start time","ساعت پایان":"End time","کار تازه":"New task","کار تازه…":"New task…","نام حوزه":"Area name","حداقل یک هفته باید بماند.":"Keep at least one week.","فایل معتبر نیست.":"Invalid file.","برنامهٔ فعلی با محتوای این فایل جایگزین شود؟":"Replace the current planner with this file?","تیک همهٔ کارها در همهٔ هفته‌ها پاک شود؟":"Clear every check and ✗ in all weeks?"};
 function L(f,e){return LANG==="fa"?f:e;}
 function cmpT(a,b){a=a||"99:99"; b=b||"99:99"; return a<b?-1:a>b?1:0;}
@@ -233,18 +187,7 @@ function areaIn(day,name){
   if(!a){a={n:name,tasks:[]}; day.areas.push(a);}
   return a;
 }
-function seed(){
-  return (LANG==="fa"?TPL:TPL_EN).map(function(w){
-    var days=emptyDays();
-    Object.keys(w.g).forEach(function(name,ai){
-      w.g[name].forEach(function(txt,i){
-        var d=(i*2+ai)%6, tm=(LANG==="fa"?AT:AT_EN)[name]||["",""];
-        areaIn(days[d],name).tasks.push({id:uid(),x:txt,s:tm[0],e:tm[1],d:false});
-      });
-    });
-    return {t:w.t,days:days};
-  });
-}
+function seed(){return [1,2,3,4].map(function(){return {t:"",days:emptyDays()};});}
 try{var raw=localStorage.getItem(KEY); if(raw) state=JSON.parse(raw);}catch(e){}
 if(!state||!state.weeks||!state.weeks.length){state={weeks:seed()}; save();}
 function pd(s){var p=s.split("-"); return new Date(+p[0],+p[1]-1,+p[2],12);}
