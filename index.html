@@ -88,6 +88,8 @@ body.dragging,body.dragging *{cursor:grabbing!important;user-select:none}
 .ovb label{display:block;margin:10px 0 2px;font-size:.9rem;color:var(--muted)}
 .ovb select,.ovb input{width:100%;font:inherit;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
 .parts{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 4px}
+.sv{display:flex;justify-content:flex-end;margin-top:6px}
+.btn:disabled{opacity:.55;cursor:default}
 .tm{direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600}
 input[type=time],input[type=text]{font:inherit;font-size:.88rem;padding:2px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
 input[type=time]{direction:ltr}
@@ -143,7 +145,7 @@ The World Is Yours...
   </div>
   <div class="wt"><input type="text" id="wtitle" aria-label="عنوان هفته" placeholder="عنوان هفته"><span id="wrange"></span><button class="link" id="delWeek">حذف هفته</button></div>
   <div class="startrow"><label for="startIn">شروع هفتهٔ اول:</label><input type="date" id="startIn"></div>
-  <section class="group"><div class="dh"><h3 style="color:var(--accent)">Target</h3></div><textarea class="note" id="target" rows="3" aria-label="Target" placeholder="هدف‌های این هفته…"></textarea></section>
+  <section class="group"><div class="dh"><h3 style="color:var(--accent)">Target</h3></div><textarea class="note" id="target" rows="3" aria-label="Target" placeholder="هدف‌های این هفته…"></textarea><div class="sv"><button type="button" class="btn ghost" id="targetSave"></button></div></section>
   <div class="dtabs" id="dtabs" role="tablist" aria-label="روزهای هفته"></div>
   <div id="days"></div>
   <datalist id="areas"></datalist>
@@ -394,6 +396,18 @@ function openPart(day,mins){
   inp.onkeydown=function(ev){ if(ev.key==="Enter") save1(); else if(ev.key==="Escape") close(); };
   bx.appendChild(row); ov.appendChild(bx); document.body.appendChild(ov); inp.focus();
 }
+var drafts=new WeakMap();
+function wireSave(obj,field,ta,btn){
+  var saved=function(){return obj[field]||"";};
+  ta.value=drafts.has(obj)?drafts.get(obj):saved();
+  function refresh(){ var dirty=ta.value!==saved(); btn.disabled=!dirty; btn.className="btn"+(dirty?"":" ghost"); }
+  ta.oninput=function(){ if(ta.value===saved()) drafts.delete(obj); else drafts.set(obj,ta.value); btn.textContent=L("ذخیره","Save"); refresh(); };
+  btn.onclick=function(){
+    obj[field]=ta.value; drafts.delete(obj); save(); refresh(); btn.textContent=L("ذخیره شد ✓","Saved ✓");
+    setTimeout(function(){ if(btn.isConnected) btn.textContent=L("ذخیره","Save"); },1500);
+  };
+  btn.textContent=L("ذخیره","Save"); refresh();
+}
 function renderDay(week,di){
   var day=week.days[di], t=0, d=0;
   day.areas.forEach(function(a){a.tasks.forEach(function(k){t++; if(k.d) d++})});
@@ -419,9 +433,10 @@ function renderDay(week,di){
     na.appendChild(inp); na.appendChild(btn); sec.appendChild(na);
   }
   var nb=el("div","notebox"); nb.appendChild(el("h4",null,"یادداشت"));
-  var ta=el("textarea","note"); ta.rows=3; ta.value=day.note||""; ta.placeholder="یادداشت "+DAYS[di]+"…"; ta.setAttribute("aria-label","یادداشت");
-  ta.oninput=function(){day.note=ta.value; save();};
-  nb.appendChild(ta); sec.appendChild(nb);
+  var ta=el("textarea","note"); ta.rows=3; ta.placeholder="یادداشت "+DAYS[di]+"…"; ta.setAttribute("aria-label","یادداشت");
+  var sb=el("button","btn ghost"); sb.type="button"; wireSave(day,"note",ta,sb);
+  var sr=el("div","sv"); sr.appendChild(sb);
+  nb.appendChild(ta); nb.appendChild(sr); sec.appendChild(nb);
   return sec;
 }
 function render(){
@@ -446,7 +461,7 @@ function render(){
   wt.onchange=function(){week.t=wt.value.trim()||L("بدون عنوان","Untitled"); save();};
   document.getElementById("wrange").textContent=fmtDay(weekStart(cur))+" تا "+fmtDay(addDays(weekStart(cur),6));
   var si=document.getElementById("startIn"); si.value=state.start;
-  var tg=document.getElementById("target"); tg.value=week.target||""; tg.oninput=function(){week.target=tg.value; save();};
+  wireSave(week,"target",document.getElementById("target"),document.getElementById("targetSave"));
   si.onchange=function(){ if(!si.value) return; state.start=iso(satOf(pd(si.value))); save(); cur=nowWeekIdx(); render(); };
   var names={}; state.weeks.forEach(function(w){w.days.forEach(function(d){d.areas.forEach(function(a){names[a.n]=1})})});
   var dl=document.getElementById("areas"); dl.innerHTML=""; Object.keys(names).forEach(function(n){var o=document.createElement("option"); o.value=n; dl.appendChild(o);});
